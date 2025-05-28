@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cichlid Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define the new color palette using CSS variables for easy management */
+        :root {
+            --color-pale-light: #CCE8F5; /* Pale Baby Blue */
+            --color-light-blue: #8DD0F3; /* Baby Blue */
+            --color-medium-blue: #0077BE; /* Medium Blue */
+            --color-deep-blue: #004F70; /* Very Dark Wedgwood */
+            --color-dark-navy: #000033; /* Dark Navy Blue */
+
+            /* Accent/Feedback colors derived from the palette */
+            --color-accent-active-bg: var(--color-deep-blue);
+            --color-accent-active-text: var(--color-pale-light);
+            --color-accent-active-shadow: rgba(0, 79, 112, 0.5); /* Shadow from deep blue */
+
+            --color-feedback-correct-bg: #E6F3FB; /* Very light blue for correct */
+            --color-feedback-correct-border: var(--color-medium-blue);
+            --color-feedback-correct-text: var(--color-dark-navy);
+
+            --color-feedback-incorrect-bg: #F0F8FE; /* Slightly darker light blue for incorrect */
+            --color-feedback-incorrect-border: var(--color-deep-blue);
+            --color-feedback-incorrect-text: var(--color-dark-navy);
+        }
+
+        /* Custom styles for the cichlid app vibe */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Subtle blue-green gradient background to mimic water */
+            background: linear-gradient(135deg, var(--color-light-blue), var(--color-deep-blue));
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem; /* Add padding for smaller screens */
+        }
+
+        /* Main container styling */
+        .app-container {
+            background-color: rgba(255, 255, 255, 0.3); /* Glassmorphism */
+            backdrop-filter: blur(10px); /* Glassmorphism */
+            border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+            border-radius: 20px; /* Rounded corners for a friendly feel */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden; /* Ensures rounded corners are respected */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header styling */
+        .app-header {
+            background-color: var(--color-dark-navy); /* Deep blue, like deep water */
+            color: var(--color-pale-light); /* Off-white for contrast */
+            padding: 1.5rem 2rem;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            text-align: center;
+            font-size: 2.25rem; /* Large and inviting title */
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Subtle text shadow */
+        }
+
+        /* Navigation tabs styling */
+        .nav-tabs {
+            display: flex;
+            justify-content: space-around; /* Distribute tabs evenly */
+            background-color: var(--color-medium-blue); /* Medium blue, like shallower water */
+            padding: 0.75rem 0;
+            border-bottom: 3px solid var(--color-dark-navy); /* Darker border for separation */
+        }
+
+        .nav-tab {
+            flex-grow: 1; /* Allow tabs to grow and fill space */
+            text-align: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--color-pale-light);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions */
+            border-radius: 10px; /* Slightly rounded tabs */
+            margin: 0 0.5rem; /* Space between tabs */
+        }
+
+        .nav-tab:hover {
+            background-color: var(--color-light-blue); /* Lighter blue on hover */
+            color: var(--color-dark-navy); /* Darker text on hover */
+            transform: translateY(-3px); /* Subtle lift effect */
+        }
+
+        .nav-tab.active {
+            background-color: var(--color-accent-active-bg); /* Vibrant red for active tab, like a striking cichlid */
+            color: var(--color-accent-active-text);
+            box-shadow: inset 0 3px 8px var(--color-accent-active-shadow); /* Inner shadow for active state */
+            transform: translateY(0); /* Reset lift for active tab */
+        }
+
+        /* Content section styling */
+        .content-section {
+            padding: 2rem;
+            min-height: 400px; /* Ensure content area has some height */
+            color: var(--color-dark-navy); /* Dark blue text */
+            line-height: 1.6;
+            display: none; /* Hidden by default */
+            flex-direction: column; /* For proper internal layout */
+            gap: 1.5rem; /* Spacing between sections */
+        }
+
+        .content-section.active {
+            display: flex; /* Show active section */
+        }
+
+        /* Specific styling for detail page */
+        .detail-section h2, .quiz-section h2 {
+            font-size: 2.5rem; /* Larger title for detail page */
+            color: var(--color-dark-navy);
+            margin-bottom: 1rem;
+        }
+
+        .detail-section h3, .quiz-section h3 {
+            font-size: 1.75rem; /* Subheadings */
+            color: var(--color-medium-blue);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .detail-section p, .detail-section ul,
+        .quiz-section p, .quiz-section ul, .quiz-section div {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-section ul, .quiz-section ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+
+        .back-button, .quiz-button {
+            background-color: var(--color-deep-blue); /* Using a deep blue for action buttons */
+            color: var(--color-pale-light);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            align-self: flex-start; /* Align button to the left */
+            margin-top: 1.5rem;
+        }
+
+        .back-button:hover, .quiz-button:hover {
+            background-color: var(--color-light-blue);
+            color: var(--color-dark-navy);
+            transform: translateY(-3px);
+        }
+
+        /* Quiz specific styles */
+        .quiz-options-container div {
+            background-color: rgba(204, 232, 245, 0.6); /* Glassmorphism - pale light blue with transparency */
+            backdrop-filter: blur(5px); /* Less blur for smaller elements */
+            border: 1px solid rgba(0, 119, 190, 0.4); /* Subtle border */
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .quiz-options-container div:hover {
+            background-color: var(--color-light-blue); /* Lighter blue hover */
+            border-color: var(--color-dark-navy);
+        }
+
+        .quiz-options-container div.selected {
+            border-color: var(--color-deep-blue); /* Deep blue border when selected */
+            box-shadow: 0 0 8px rgba(0, 79, 112, 0.5); /* Shadow from deep blue */
+        }
+
+        /* Correct and Incorrect highlighting for options */
+        .quiz-options-container div.correct-highlight {
+            background-color: #D4EDDA; /* Light green for correct */
+            border-color: #28A745; /* Green border */
+            color: #155724; /* Dark green text */
+            font-weight: 700;
+        }
+
+        .quiz-options-container div.incorrect-highlight {
+            background-color: #F8D7DA; /* Light red for incorrect */
+            border-color: #DC3545; /* Red border */
+            color: #721C24; /* Dark red text */
+            font-weight: 700;
+        }
+
+        .quiz-feedback {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: rgba(204, 232, 245, 0.5); /* Glassmorphism */
+            backdrop-filter: blur(10px); /* Glassmorphism */
+            border: 1px solid rgba(0, 119, 190, 0.3); /* Subtle border */
+            display: none; /* Hidden until answer is selected */
+        }
+
+        .quiz-feedback.correct {
+            border-color: var(--color-feedback-correct-border);
+            background-color: var(--color-feedback-correct-bg);
+            color: var(--color-feedback-correct-text);
+        }
+
+        .quiz-feedback.incorrect {
+            border-color: var(--color-feedback-incorrect-border);
+            background-color: var(--color-feedback-incorrect-bg);
+            color: var(--color-feedback-incorrect-text);
+        }
+
+        .quiz-buttons-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1rem;
+        }
+
+        #next-question-btn {
+            background-color: var(--color-medium-blue); /* Medium blue */
+            color: var(--color-pale-light);
+        }
+
+        #next-question-btn:hover {
+            background-color: var(--color-deep-blue);
+            color: var(--color-pale-light);
+            transform: translateY(-3px);
+        }
+
+        #exit-quiz-btn {
+            background-color: var(--color-dark-navy); /* Dark Navy for exit */
+            color: var(--color-pale-light);
+        }
+
+        #exit-quiz-btn:hover {
+            background-color: var(--color-deep-blue);
+            color: var(--color-pale-light);
+            transform: translateY(-3px);
+        }
+
+        /* Score display */
+        #quiz-score {
+            text-align: center;
+            margin-top: 1.5rem; /* Adjusted margin */
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: rgba(204, 232, 245, 0.5); /* Glassmorphism */
+            backdrop-filter: blur(10px); /* Glassmorphism */
+            border: 1px solid var(--color-medium-blue);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-dark-navy);
+            /* display: none; */ /* Keep visible after answer */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .app-header {
+                font-size: 1.75rem;
+                padding: 1rem;
+            }
+            .nav-tabs {
+                flex-direction: column; /* Stack tabs vertically on small screens */
+                padding: 0.5rem;
+            }
+            .nav-tab {
+                margin: 0.25rem 0.5rem;
+                padding: 0.5rem 1rem;
+            }
+            .content-section {
+                padding: 1.5rem;
+                min-height: 300px;
+            }
+            .detail-section h2, .quiz-section h2 {
+                font-size: 2rem;
+            }
+            .detail-section h3, .quiz-section h3 {
+                font-size: 1.5rem;
+            }
+            .detail-section p, .detail-section ul,
+            .quiz-section p, .quiz-section ul, .quiz-section div {
+                font-size: 1rem;
+            }
+            .quiz-buttons-container {
+                flex-direction: column;
+            }
+        }
+
+        /* Glassmorphism for the species cards */
+        .electric-blue-hap-card, .angelfish-card, .jack-dempsey-card {
+            background-color: rgba(255, 255, 255, 0.5); /* Glassmorphism */
+            backdrop-filter: blur(8px); /* Subtle blur */
+            border: 1px solid rgba(0, 119, 190, 0.3); /* Subtle border */
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            Cichlid Explorer
+        </header>
+
+        <nav class="nav-tabs" id="main-nav-tabs">
+            <div class="nav-tab active" data-tab="species">Species</div>
+            <div class="nav-tab" data-tab="quiz">Quiz</div>
+            <div class="nav-tab" data-tab="about">About</div>
+        </nav>
+
+        <main class="app-content">
+            <section id="species" class="content-section active">
+                <h2 class="text-2xl font-bold mb-4">Discover Cichlids!</h2>
+                <p>Dive deeper into the vibrant world of cichlids! Whether you're captivated by their evolutionary diversity, complex behavior, or stunning coloration - explore, learn, and rediscover what makes cichlids truly extraordinary.</p>
+                <div id="species-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                    <div class="bg-white p-4 rounded-lg shadow-md border border-blue-200 cursor-pointer electric-blue-hap-card">
+                        <img src="https://www.cloningaquapets.com/cdn/shop/files/Untitleddesign-2024-09-13T170948.525.png?v=1726230089" alt="Electric Blue Hap Cichlid" class="w-full h-40 object-cover rounded-md mb-3">
+                        <h3 class="text-xl font-semibold mb-2">Electric Blue Hap</h3>
+                        <p class="text-sm">Known for its vibrant blue coloration, this cichlid is a stunning addition to any aquarium. It originates from Lake Malawi.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md border border-blue-200 cursor-pointer angelfish-card">
+                        <img src="https://nplimages.infradoxxs.com/cache/pcache2/01513021.jpg" alt="Angelfish Cichlid" class="w-full h-40 object-cover rounded-md mb-3">
+                        <h3 class="text-xl font-semibold mb-2">Angelfish</h3>
+                        <p class="text-sm">A popular freshwater cichlid with a distinctive compressed body and long, flowing fins. Native to South America.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md border border-blue-200 cursor-pointer jack-dempsey-card">
+                        <img src="https://www.everythingfishkeeping.com/wp-content/uploads/2021/03/Jack-Dempsey-Fish.jpg" alt="Jack Dempsey Cichlid" class="w-full h-40 object-cover rounded-md mb-3">
+                        <h3 class="text-xl font-semibold mb-2">Jack Dempsey</h3>
+                        <p class="text-sm">Named after the famous boxer, this Central American cichlid is known for its robust build and strong personality.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="electric-blue-hap-detail" class="content-section detail-section">
+                <button class="back-button" id="back-to-species-from-hap">← Back to Species</button>
+                <h2 class="text-3xl font-bold mb-4">Electric Blue Hap (<span class="italic">Sciaenochromis fryeri</span>)</h2>
+                <img src="https://www.cloningaquapets.com/cdn/shop/files/Untitleddesign-2024-09-13T170948.525.png?v=1726230089" alt="Electric Blue Hap Cichlid" class="w-full max-w-md mx-auto rounded-lg shadow-lg mb-6">
+
+                <h3>Origin and Natural Habitat</h3>
+                <p>The Electric Blue Hap, scientifically known as <span class="italic">Sciaenochromis fryeri</span>, is a stunning cichlid native to **Lake Malawi in East Africa**. They are primarily found in rocky coastal areas and the transition zones where rocks meet sand, typically inhabiting depths ranging from 10 to 40 meters. Early specimens were often collected from Maleri Island and Cape Maclear, though today many come from Likoma Island and surrounding reefs.</p>
+
+                <h3>Physical Characteristics and Behavior</h3>
+                <p>Males are renowned for their intense metallic blue coloration, often complemented by yellow or orange eyes and vibrant red or orange accents on their fins. Many dominant males also develop a striking bright white stripe along their dorsal fin or spine, which can extend to the forehead in certain strains like the popular "Iceberg." Females, in contrast, are generally a more subdued silver-beige with a slight blue sheen and subtle dark gray vertical stripes. Juveniles are typically gray.</p>
+                <p>While generally considered one of the more peaceful African cichlids, males can exhibit territorial behavior, particularly during breeding or if housed in tanks that are too small. They are active and curious fish. In an aquarium setting, it's often recommended to keep them in a trio (one male with two or more females) or a larger group with multiple females to help diffuse any potential aggression from the male. Multiple males in smaller tanks can lead to significant territorial disputes.</p>
+                <p>They are maternal mouthbrooders. Males will construct shallow breeding pits in sandy areas, often near rocks, to entice females. After spawning, the female collects the fertilized eggs into her mouth for incubation, a process that typically lasts around 23 days. During this period, the female will not eat.</p>
+
+                <h3>Aquarium Care and Husbandry</h3>
+                <p>For optimal health and to mitigate aggression, a minimum tank size of **75 gallons (284 liters)** is recommended for a group, with **125 gallons (approximately 6 feet in length)** being ideal due to their active swimming nature. Tank length and width are more critical than height for these fish.</p>
+                <ul>
+                    <li>**Water Parameters:** They thrive in hard, alkaline water. Aim for a pH between 7.8 and 8.6 (ideally above 8.0) and a temperature range of 23-28°C (75-82°F). Stable water conditions are paramount.</li>
+                    <li>**Filtration & Water Changes:** Excellent filtration and strong water circulation are essential. Regular, large water changes (20-30% weekly) are crucial for maintaining pristine water quality.</li>
+                    <li>**Substrate & Decor:** Use a fine gravel or sand substrate. Provide ample rockwork, caves, and hiding spots to establish territories and reduce stress. Ensure there are also open swimming areas. The inclusion of limestone rocks can help maintain the desired alkaline pH.</li>
+                    <li>**Diet:** As natural piscivores (fish-eaters), their diet in the aquarium should be varied. A high-quality cichlid pellet or flake food should form the base, supplemented with live or frozen foods such as brine shrimp, bloodworms, daphnia, mysis shrimp, krill, or small pieces of fish/mussels/chopped shrimp. Avoid feeding tubifex worms.</li>
+                    <li>**Tankmates:** Compatible tankmates include other peaceful yet robust African cichlids of similar size and temperament, such as Electric Yellow Labs (<span class="italic">Labidochromis caeruleus</span>) or certain *Aulonocara* and *Nimbochromis* species. Avoid highly aggressive Mbuna cichlids or fish significantly smaller than the Electric Blue Hap.</li>
+                </ul>
+
+                <h3>Obscure Facts and Interesting Stories</h3>
+                <ul>
+                    <li>**Identity Crisis:** The Electric Blue Hap is famously (and persistently) mislabeled in the aquarium trade as <span class="italic">Sciaenochromis ahli</span>. However, <span class="italic">S. ahli</span> is a distinct, much rarer species. The fish we commonly know as the Electric Blue Hap was officially described as <span class="italic">Sciaenochromis fryeri</span> by renowned cichlid expert Ad Konings in 1993. The key difference lies in the length of the premaxillary pedicel.</li>
+                    <li>**The "Iceberg" Phenomenon:** The highly sought-after "Iceberg" strain, characterized by an extensive white blaze on the dorsal fin and head, originated from individual mutants found near Maleri Island over two decades ago. This strain was selectively bred for its striking aesthetic, but it's been observed that this prominent white coloration also plays a role in interspecific communication among cichlids. Interestingly, subdominant males of the "Iceberg" strain may only display the white coloration on their forehead and dorsal fin, not across their entire body.</li>
+                    <li>**Wild vs. Aquarium Behavior:** In their natural habitat, male <span class="italic">S. fryeri</span> are known to construct large, conical breeding structures from sediment. In the confines of an aquarium, they typically create much shallower breeding pits. Wild-caught males can also exhibit more aggression compared to their aquarium-bred counterparts.</li>
+                    <li>**Color as a Mood Ring:** The intensity of the male's vibrant blue coloration can fluctuate significantly based on its excitement level, dominance, and overall mood. When stressed, they may even display subtle dark vertical bars on their bodies.</li>
+                </ul>
+            </section>
+
+            <section id="angelfish-detail" class="content-section detail-section">
+                <button class="back-button" id="back-to-species-from-angelfish">← Back to Species</button>
+                <h2 class="text-3xl font-bold mb-4">Angelfish (<span class="italic">Pterophyllum scalare</span>)</h2>
+                <img src="https://nplimages.infradoxxs.com/cache/pcache2/01513021.jpg" alt="Angelfish Cichlid" class="w-full max-w-md mx-auto rounded-lg shadow-lg mb-6">
+
+                <h3>Origin and Natural Habitat</h3>
+                <p>The Angelfish, specifically <span class="italic">Pterophyllum scalare</span>, is a well-known freshwater cichlid originating from **tropical South America**, primarily found in the Amazon River basin (Peru, Colombia, Brazil) and other river systems like the Rio Oyapock and Rio Essequibo. They prefer quiet, slow-moving waters such as floodplains, swamps, and areas with dense underwater vegetation, fallen branches, and roots, which provide both camouflage and hunting grounds. They avoid the faster currents of main rivers.</p>
+
+                <h3>Physical Characteristics and Behavior</h3>
+                <p>Angelfish are instantly recognizable by their distinctive laterally compressed, roughly triangular body shape, with elongated dorsal and anal fins that give them a tall, graceful appearance. Wild types are typically silver with dark vertical stripes, offering excellent camouflage among submerged plants. Through selective breeding, numerous color patterns and finnage variations (like "veiltails") have been developed in captivity.</p>
+                <p>While members of the cichlid family, Angelfish are generally considered semi-aggressive to peaceful, especially when not breeding. They are highly visual and intelligent fish, known to recognize their owners. They form monogamous pairs that are fiercely protective of their eggs and fry. A lesser-known behavior is "brushing," where Angelfish rub their flanks against each other, possibly as a form of social bonding or conflict resolution. They are ambush predators, preying on small fish and macroinvertebrates.</p>
+                <p>During breeding, pairs will select and meticulously clean a vertical surface (like a broad leaf, slate, or even the aquarium glass) to lay their eggs. Both parents participate in fanning the eggs to ensure oxygenation and removing infertile ones. After hatching, the fry remain attached to the surface, feeding on their yolk sacs, before becoming free-swimming. Captive-bred angelfish, unfortunately, have sometimes lost some of their natural parental instincts.</p>
+
+                <h3>Aquarium Care and Husbandry</h3>
+                <p>Due to their height and social nature, Angelfish require a sufficiently tall and spacious aquarium. A minimum of **55 gallons (208 liters)** is recommended for a group, with taller tanks being preferable to accommodate their body shape. Keeping them in groups of at least 5-6 individuals is advisable to promote natural schooling behavior and diffuse potential aggression.</p>
+                <ul>
+                    <li>**Water Parameters:** They are adaptable but prefer soft to moderately hard water with a slightly acidic to neutral pH, ideally between 6.0 and 7.5. Temperatures should be tropical, ranging from 24-30°C (75-86°F), with stable conditions being key.</li>
+                    <li>**Filtration & Water Changes:** Good filtration and regular water changes (10-25% weekly) are essential for maintaining water quality. Water flow should be gentle, mimicking their natural slow-moving habitats.</li>
+                    <li>**Substrate & Decor:** A fine-to-medium grade, smooth-surfaced gravel or sand substrate is suitable. Decorate with broadleaf plants (live or artificial), driftwood arranged vertically, and floating plants to provide shaded areas and hiding spots.</li>
+                    <li>**Diet:** Angelfish are omnivores but are largely carnivorous by nature. They are voracious eaters and will readily accept high-quality flakes, pellets, and a variety of frozen and live foods such as brine shrimp, bloodworms, daphnia, and small pieces of fish. A varied diet is crucial for their health.</li>
+                    <li>**Tankmates:** Choose tankmates carefully. While generally peaceful, adult angelfish will consume any fish small enough to fit in their mouths (e.g., very small tetras like juvenile Neon Tetras). Suitable tankmates include larger tetras, rasboras, gouramis, peaceful barbs, rainbowfish, Corydoras catfish, and other medium-sized, non-aggressive species. Avoid fin-nippers like some barbs, as their long fins are an easy target.</li>
+                </ul>
+
+                <h3>Obscure Facts and Interesting Stories</h3>
+                <ul>
+                    <li>**The "Diamond" Shape:** The genus name <span class="italic">Pterophyllum</span> roughly translates from Greek to "sail-leaf," a direct reference to their unique, flattened body and tall fins, which are perfectly adapted for navigating dense underwater vegetation.</li>
+                    <li>**Early Aquarium Challenges:** When Angelfish were first exported to Europe in the early 1900s, keeping and breeding them was considered extremely difficult. This was largely due to a lack of understanding regarding their specific water parameter requirements, leading to frequent breeding failures.</li>
+                    <li>**Monogamous Loyalty:** Angelfish are known to form strong, long-term monogamous pairs. If one mate is lost or removed, the remaining partner may refuse to pair with any other angelfish and may never successfully breed again, showcasing a surprising level of loyalty to a fish.</li>
+                    <li>**"Peru Altum" Confusion:** There are wild forms of <span class="italic">Pterophyllum scalare</span>, such as "Peru Altum" from the Rio Nanay, that closely resemble the much rarer and more challenging-to-keep true <span class="italic">Pterophyllum altum</span>. These "Peru Altum" variants are prized for their tall bodies and often reddish coloration, especially in blackwater environments.</li>
+                </ul>
+            </section>
+
+            <section id="jack-dempsey-detail" class="content-section detail-section">
+                <button class="back-button" id="back-to-species-from-jack-dempsey">← Back to Species</button>
+                <h2 class="text-3xl font-bold mb-4">Jack Dempsey (<span class="italic">Rocio octofasciata</span>)</h2>
+                <img src="https://www.everythingfishkeeping.com/wp-content/uploads/2021/03/Jack-Dempsey-Fish.jpg" alt="Jack Dempsey Cichlid" class="w-full max-w-md mx-auto rounded-lg shadow-lg mb-6">
+
+                <h3>Origin and Natural Habitat</h3>
+                <p>The Jack Dempsey cichlid, scientifically known as <span class="italic">Rocio octofasciata</span> (though historically known by several other names like <span class="italic">Cichlasoma octofasciatum</span>), is native to **Central America**, specifically freshwater habitats from southern Mexico to Honduras. They are typically found in slow-moving or stagnant waters such as drainage ditches, canals, creeks, swamps, and rivers with murky water, and substrates of mud, sand, or decomposing leaves. They are also established as an introduced species in parts of the United States, Australia, and Thailand, often due to accidental release from aquariums.</p>
+
+                <h3>Physical Characteristics and Behavior</h3>
+                <p>Jack Dempseys have a robust, oval-shaped body with a striking coloration that changes as they mature. Juveniles are pale gray with faint turquoise flecks, gradually developing into a dark purple-gray body adorned with bright, iridescent blue, green, and gold flecks. Males often have elongated, pointed dorsal and anal fins, while females' fins are more rounded. Their colors can intensify or fade depending on their mood and stress levels.</p>
+                <p>Named after the famous boxer, Jack Dempseys are known for their active and sometimes aggressive, territorial nature. They are particularly aggressive during breeding periods. They are bottom-to-middle dwellers and will establish territories, often centered around caves or secure hiding spots that they may excavate themselves by digging in the substrate. While they can be kept with other large, robust cichlids, they are best housed with species of similar size and temperament, or as a solitary specimen in smaller tanks. They are attentive biparental caretakers, with both parents guarding eggs and fry.</p>
+
+                <h3>Aquarium Care and Husbandry</h3>
+                <p>Due to their size and territorial behavior, a minimum tank size of **55 gallons (208 liters)** is recommended for a single adult, with **75 gallons or more** being ideal for a pair or a community with other large cichlids. Tank length and width are more critical than height for providing adequate swimming and territorial space.</p>
+                <ul>
+                    <li>**Water Parameters:** Jack Dempseys are quite hardy and adaptable. They prefer tropical temperatures between 22-30°C (72-86°F) and a slightly acidic to neutral pH range of 6.5-7.5. They can tolerate a range of water hardness (9-20 dGH). Stable water conditions are crucial.</li>
+                    <li>**Filtration & Water Changes:** Strong filtration (mechanical, biological, and chemical) is essential to manage their bioload. Regular water changes (20-30% weekly) are necessary to maintain pristine water quality and keep nitrates low.</li>
+                    <li>**Substrate & Decor:** Provide a soft, sandy substrate or fine gravel, as they enjoy digging and sifting. Include plenty of secure hiding spots using large rocks, driftwood, and caves. Ensure decorations are stable and won't be undermined by their digging. Tough, rooted plants like Anubias or Java Fern attached to decor can work, but they may uproot others.</li>
+                    <li>**Diet:** Jack Dempseys are omnivorous carnivores with hearty appetites. Their diet should consist of high-quality cichlid pellets or flakes as a staple, supplemented with a variety of live or frozen foods such such as bloodworms, brine shrimp, krill, and small pieces of fish or crustaceans. They will also graze on some plant matter or algae.</li>
+                    <li>**Tankmates:** Choosing tankmates carefully. While generally peaceful, adult angelfish will consume any fish small enough to fit in their mouths (e.g., very small tetras like juvenile Neon Tetras). Suitable tankmates include other large, semi-aggressive cichlids (e.g., Firemouths, Green Terrors, Convict Cichlids), robust catfish (e.g., Plecos, Synodontis), and larger, fast-moving schooling fish. Overcrowding can sometimes diffuse aggression but requires even more diligent filtration.</li>
+                </ul>
+
+                <h3>Obscure Facts and Interesting Stories</h3>
+                <ul>
+                    <li>**The Boxer's Name:** The fish was named after the famous American heavyweight boxer Jack Dempsey (William Harrison Dempsey) because of its aggressive, combative nature and strong facial features. This comparison was made shortly after the fish arrived in European and American aquariums around 1909.</li>
+                    <li>**Taxonomic Journey:** The Jack Dempsey has undergone numerous scientific name changes throughout its history, moving through genera like <span class="italic">Cichlasoma</span>, <span class="italic">Heros</span>, <span class="italic">Parapetenia</span>, <span class="italic">Nandopsis</span>, and <span class="italic">Archocentrus</span> before settling on its current classification as <span class="italic">Rocio octofasciata</span>. Despite these changes, its common name has remained constant.</li>
+                    <li>**The "Electric Blue" Mutation:** A naturally occurring genetic mutation resulted in the stunning "Electric Blue Jack Dempsey" variant. These fish exhibit a brilliant blue coloration across their entire body. Interestingly, this morph is generally smaller, less aggressive, and more delicate than the wild-type Jack Dempsey. Breeding two Electric Blue Jack Dempseys together often results in non-viable offspring, so they are typically crossed with regular Jack Dempseys to maintain the strain.</li>
+                    <li>**Shy Aggressors:** Despite their aggressive reputation, Jack Dempseys can sometimes appear shy, especially when first introduced to a new tank or if they feel exposed. Providing ample hiding places can help reduce their stress and make them more comfortable in their environment, which can, paradoxically, make them less prone to random aggression.</li>
+                </ul>
+            </section>
+
+            <section id="quiz" class="content-section quiz-section">
+                <h2 class="text-2xl font-bold mb-4">Test Your Cichlid Knowledge!</h2>
+                <div id="quiz-container" class="bg-white p-6 rounded-lg shadow-md border border-blue-200 mt-6">
+                    <p id="question-text" class="text-xl font-semibold mb-4"></p>
+                    <div id="quiz-options" class="quiz-options-container">
+                        </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <p id="feedback-message" class="font-bold mb-2"></p>
+                        <p id="correct-answer-info"></p>
+                    </div>
+                    <div id="quiz-score" class="quiz-score">
+                        </div>
+                    <div class="quiz-buttons-container">
+                        <button class="quiz-button" id="next-question-btn" disabled>Next Question</button>
+                        <button class="quiz-button" id="exit-quiz-btn">Exit Quiz</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="about" class="content-section">
+                <h2 class="text-2xl font-bold mb-4">About This App</h2>
+                <p>This webpage was created to help learners explore the amazing world of cichlids. We hope you enjoy it!</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // JavaScript for tab switching and detail page display
+        document.addEventListener('DOMContentLoaded', () => {
+            const navTabs = document.querySelectorAll('.nav-tab');
+            const contentSections = document.querySelectorAll('.content-section');
+            const electricBlueHapCard = document.querySelector('.electric-blue-hap-card');
+            const angelfishCard = document.querySelector('.angelfish-card');
+            const jackDempseyCard = document.querySelector('.jack-dempsey-card');
+            const electricBlueHapDetailSection = document.getElementById('electric-blue-hap-detail');
+            const angelfishDetailSection = document.getElementById('angelfish-detail');
+            const jackDempseyDetailSection = document.getElementById('jack-dempsey-detail');
+            const backToSpeciesFromHapButton = document.getElementById('back-to-species-from-hap');
+            const backToSpeciesFromAngelfishButton = document.getElementById('back-to-species-from-angelfish');
+            const backToSpeciesFromJackDempseyButton = document.getElementById('back-to-species-from-jack-dempsey');
+            const speciesSection = document.getElementById('species');
+            const mainNavTabs = document.getElementById('main-nav-tabs');
+
+            // Quiz elements
+            const quizSection = document.getElementById('quiz');
+            const questionText = document.getElementById('question-text');
+            const quizOptionsContainer = document.getElementById('quiz-options');
+            const quizFeedback = document.getElementById('quiz-feedback');
+            const feedbackMessage = document.getElementById('feedback-message');
+            const correctAnswerInfo = document.getElementById('correct-answer-info');
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            const exitQuizBtn = document.getElementById('exit-quiz-btn');
+            const quizScoreDisplay = document.getElementById('quiz-score');
+
+            let currentQuestionIndex = 0;
+            let availableQuestionIndices = [];
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let quizActive = false;
+            let scoreTimeout = null; // Variable to hold the timeout ID
+
+            let quizQuestions = [
+                // Question 1
+                {
+                    question: "Which of the following is the primary reason for the extensive speciation of cichlids in the African Rift Lakes?",
+                    options: [
+                        "Abundant food sources",
+                        "High water flow and oxygenation",
+                        "Geographic isolation and diverse microhabitats",
+                        "Low predation pressure"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "The unique geological formation of the African Rift Lakes (Malawi, Tanganyika, Victoria) created numerous isolated bays, rocky outcrops, and distinct substrate types. This geographic isolation, combined with a variety of microhabitats, allowed cichlid populations to evolve independently and rapidly, leading to an unparalleled diversity of species (adaptive radiation)."
+                },
+                // Question 2
+                {
+                    question: "In African cichlid husbandry, what is the term for the aggressive behavior where a dominant male constantly harasses a female, often leading to her death, due to insufficient hiding places or too few females?",
+                    options: [
+                        "Conspecific aggression",
+                        "Target guarding",
+                        "Female harassment syndrome",
+                        "Spawning aggression"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Female harassment syndrome (or male-on-female aggression) is a common issue in African cichlid tanks, especially with polygamous mouthbrooders. It occurs when a male, driven by breeding instincts, relentlessly pursues a female, stressing her to the point of illness or death. It's often mitigated by maintaining a higher female-to-male ratio (e.g., 1 male to 3-5 females) and providing ample hiding spots."
+                },
+                // Question 3
+                {
+                    question: "Which of these South American cichlids is known for forming strong, monogamous pair bonds and exhibiting biparental care, where both parents actively guard eggs and fry?",
+                    options: [
+                        "Discus (Symphysodon spp.)",
+                        "Ram Cichlid (Mikrogeophagus ramirezi)",
+                        "Angelfish (Pterophyllum scalare)",
+                        "Oscar (Astronotus ocellatus)"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "While Discus also exhibit biparental care, Angelfish are particularly well-known for forming strong, often lifelong, monogamous pair bonds. Both the male and female meticulously guard the spawning site, fan the eggs, and protect the free-swimming fry. If one partner is lost, the remaining fish may refuse to pair with another."
+                },
+                // Question 4
+                {
+                    question: "What is the critical water parameter that differentiates most Lake Malawi Mbuna cichlids from typical Amazonian cichlids, requiring careful consideration in mixed-biotope setups?",
+                    options: [
+                        "Nitrate levels",
+                        "Water flow",
+                        "pH and hardness",
+                        "Dissolved oxygen"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Lake Malawi Mbuna cichlids thrive in hard, alkaline water (pH 7.8-8.6+ and high GH/KH), mimicking their natural rift lake environment. In contrast, many Amazonian cichlids (like Discus, Angelfish, Rams) prefer soft, acidic water (pH 5.5-7.0 and low GH/KH). Mixing these biotypes without careful parameter management can lead to chronic stress and disease in one or both groups."
+                },
+                // Question 5
+                {
+                    question: "A common misconception in cichlid keeping is that 'egg spots' on the anal fin of male African mouthbrooders serve what primary purpose?",
+                    options: [
+                        "To attract females",
+                        "To mimic eggs, tricking the female into mouthing milt",
+                        "To indicate dominance to rival males",
+                        "To provide camouflage"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "During spawning, the female mouthbrooder lays eggs and then attempts to pick them up. The male displays his anal fin with conspicuous egg spots. The female, mistaking these spots for more eggs, mouths the male's fin, at which point the male releases milt (sperm) directly into her mouth, fertilizing the eggs she has already collected."
+                },
+                // Question 6
+                {
+                    question: "What is the primary diet classification for many Tropheus species from Lake Tanganyika, and why is this crucial for their aquarium health?",
+                    options: [
+                        "Carnivore; prone to bloat from vegetable matter",
+                        "Omnivore; requires balanced protein and plant matter",
+                        "Herbivore/Algae grazer; prone to bloat from high protein",
+                        "Piscivore; requires live fish only"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Tropheus cichlids are specialized herbivores in the wild, primarily grazing on aufwuchs (algae and associated microorganisms) from rocks. Feeding them diets high in animal protein can severely disrupt their digestive system, leading to a fatal condition known as 'Malawi bloat' (though it affects Tanganyikan cichlids too). Their diet must be predominantly vegetable-based."
+                },
+                // Question 7
+                {
+                    question: "When setting up a breeding tank for a pair of substrate-spawning cichlids, which of the following is considered the most suitable spawning surface?",
+                    options: [
+                        "Fine sand bed",
+                        "A large, smooth, flat rock or slate",
+                        "Floating plants",
+                        "A plastic breeding cone"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "Substrate spawners, such as many South American cichlids (e.g., Angelfish, Discus, Kribensis), lay their adhesive eggs directly onto a flat, cleaned surface. A smooth, flat rock or piece of slate placed vertically or at an angle provides an ideal substrate for egg attachment and parental fanning. While breeding cones are used, a natural flat surface is often preferred."
+                },
+                // Question 8
+                {
+                    question: "Which of these cichlid genera is known for its 'shell-dwelling' behavior, utilizing empty snail shells for shelter and breeding?",
+                    options: [
+                        "Julidochromis",
+                        "Neolamprologus (specifically N. multifasciatus)",
+                        "Cyprichromis",
+                        "Lamprologus (excluding shell-dwellers)"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "Several species within the Neolamprologus genus from Lake Tanganyika, most famously N. multifasciatus and N. ocellatus, are obligate shell-dwellers. They establish territories around and breed within empty snail shells, primarily those of Neothauma tanganyicense. This unique adaptation provides protection and a dedicated breeding site."
+                },
+                // Question 9
+                {
+                    question: "What is the primary function of a 'sump' in a large cichlid aquarium filtration system, beyond basic mechanical filtration?",
+                    options: [
+                        "To increase water flow for current-loving species",
+                        "To serve as a refugium for small prey fish",
+                        "To provide additional biological filtration volume and stable water parameters",
+                        "To house a UV sterilizer exclusively"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "A sump is an external filtration system that significantly increases the total water volume of the aquarium, which inherently helps stabilize water parameters. More importantly, it provides a large, dedicated space for various filter media (bio-balls, ceramic rings, sponges) that house beneficial bacteria, vastly increasing biological filtration capacity crucial for handling the bioload of large cichlids. It can also house heaters, protein skimmers (for saltwater, but sometimes used in specialized freshwater setups), and UV sterilizers, keeping them out of the main display tank."
+                },
+                // Question 10
+                {
+                    question: "The term 'peacock cichlid' generally refers to species from which African Rift Lake genus, known for their vibrant male coloration and sand-dwelling habits?",
+                    options: [
+                        "Mbuna",
+                        "Haplochromis (specifically the Aulonocara genus)",
+                        "Pseudotropheus",
+                        "Tropheus"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "While 'Haplochromis' is a broader term for many open-water hunting cichlids, the 'Peacock Cichlids' specifically refer to species within the Aulonocara genus (which falls under the 'Hap' umbrella). They are distinguished by their bright, often iridescent male coloration and their unique hunting strategy of 'listening' for invertebrates in the sand using specialized pores on their heads. They are typically found in sandy areas or transition zones of Lake Malawi."
+                },
+                // Additional 10 questions to reach 30 total
+                {
+                    question: "Which of the following is an example of a Central American cichlid known for its relatively peaceful temperament and suitability for planted aquariums, often displaying beautiful rainbow coloration?",
+                    options: [
+                        "Red Devil (Amphilophus labiatus)",
+                        "Green Terror (Andinoacara rivulatus)",
+                        "Rainbow Cichlid (Herotilapia multispinosa)",
+                        "Texas Cichlid (Herichthys cyanoguttatus)"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "The Rainbow Cichlid (Herotilapia multispinosa) is one of the more peaceful Central American cichlids, often recommended for community tanks with appropriate tankmates and even planted setups, unlike many of its more aggressive counterparts. Its ability to change color based on mood is also a notable trait."
+                },
+                {
+                    question: "What is the primary dietary requirement for adult Discus (<span class='italic'>Symphysodon</span> spp.) in an aquarium setting?",
+                    options: [
+                        "Strictly herbivorous pellets",
+                        "High-protein flakes and frozen foods",
+                        "Live algae and spirulina",
+                        "Small feeder fish only"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "Adult Discus are omnivorous with a strong carnivorous tendency. They require a high-quality, protein-rich diet consisting of specialized Discus pellets, flakes, and a variety of frozen foods like bloodworms, brine shrimp, mysis shrimp, and beef heart mixes. A lack of protein can lead to stunted growth and poor health."
+                },
+                {
+                    question: "Which of these is a common symptom of 'Hole-in-the-Head' disease (HITH) in cichlids, often associated with poor water quality, nutritional deficiencies, or internal parasites?",
+                    options: [
+                        "Bloated body and clamped fins",
+                        "White, cotton-like growths on the mouth and fins",
+                        "Erosions and pitting around the head and lateral line",
+                        "Rapid gill movement and gasping at the surface"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Hole-in-the-Head disease (HITH), or Hexamita, is characterized by visible erosions, pits, or lesions, primarily on the head and along the lateral line of cichlids. It's often linked to poor water conditions, a lack of essential vitamins (especially Vitamin C), or the presence of internal flagellates like Hexamita."
+                },
+                {
+                    question: "The term 'Mbuna' refers to a specific group of cichlids from Lake Malawi. What does 'Mbuna' literally mean in the local language, reflecting their natural behavior?",
+                    options: [
+                        "Open water dwellers",
+                        "Rock-dwelling fish",
+                        "Sand sifting fish",
+                        "Mouthbrooding fish"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "'Mbuna' is a local word from the Tonga people of Malawi, meaning 'rock-dwelling fish.' This aptly describes their natural habitat and behavior, as these cichlids live among the rocky shores of Lake Malawi, grazing on algae and defending territories within the rockwork."
+                },
+                {
+                    question: "What is the primary advantage of using a bare-bottom tank (no substrate) for breeding and raising cichlid fry?",
+                    options: [
+                        "Enhances coloration of fry",
+                        "Reduces aggressive behavior in parents",
+                        "Simplifies cleaning and prevents substrate-borne diseases",
+                        "Increases oxygenation for fry"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "A bare-bottom tank is often preferred for breeding and fry rearing because it significantly simplifies cleaning and maintenance. Uneaten food and waste are easily siphoned out, preventing the buildup of harmful nitrates and bacteria that can cause diseases in delicate fry. It also eliminates the risk of substrate-borne pathogens."
+                },
+                {
+                    question: "Which of these is a common cause of 'stunting' in cichlids, leading to a fish that is physically small for its age but appears to have adult features?",
+                    options: [
+                        "Overfeeding",
+                        "Excessive lighting",
+                        "Poor water quality and overcrowding",
+                        "Lack of proper filtration"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Stunting in cichlids is most commonly caused by prolonged exposure to poor water quality (high nitrates, ammonia, nitrites) and/or overcrowding. These stressors inhibit proper growth, even if the fish is receiving adequate nutrition. The fish's internal organs may continue to grow, leading to a shortened lifespan and health issues."
+                },
+                {
+                    question: "What unique adaptation allows some cichlids, particularly certain Lake Tanganyika species, to thrive in environments with low oxygen levels?",
+                    options: [
+                        "Ability to breathe atmospheric air",
+                        "Specialized lung-like organs",
+                        "Highly efficient gills with increased surface area",
+                        "Reduced metabolic rate"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Some cichlids, especially those from deeper, less oxygenated waters of Lake Tanganyika (like certain Tropheus species), have evolved highly efficient gills with a larger surface area to maximize oxygen uptake from their environment. This adaptation allows them to survive in conditions that would be lethal to many other fish species."
+                },
+                {
+                    question: "The 'Electric Blue Jack Dempsey' is a popular ornamental variant. What is its genetic origin?",
+                    options: [
+                        "A hybrid cross with another blue cichlid",
+                        "A result of selective breeding for a specific diet",
+                        "A naturally occurring genetic mutation (xanthic morph)",
+                        "Induced by specific water parameters"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "The Electric Blue Jack Dempsey is a naturally occurring genetic mutation, specifically a xanthic morph (a yellowish or reddish variant, often with iridescent blue). It's not a hybrid. This mutation results in their striking blue coloration, but often comes with reduced size, less aggression, and sometimes greater fragility compared to the wild type."
+                },
+                {
+                    question: "Which of the following is a key difference in parental care between maternal mouthbrooders and biparental substrate spawners?",
+                    options: [
+                        "Only the male guards the eggs in mouthbrooders.",
+                        "Substrate spawners scatter eggs randomly.",
+                        "Mouthbrooders carry eggs/fry in their mouth, while substrate spawners guard a fixed nest.",
+                        "Mouthbrooders provide no parental care after hatching."
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "The defining difference is the location of parental protection. Maternal mouthbrooders (e.g., many African cichlids) carry their eggs and fry in their mouth. Biparental substrate spawners (e.g., Angelfish, Oscars) lay adhesive eggs on a surface (rock, plant, slate) and both parents actively guard and fan the nest."
+                },
+                {
+                    question: "What does a high reading of 'Ammonia (NH3/NH4+)' in an established aquarium indicate, and what is its immediate danger to fish?",
+                    options: [
+                        "Healthy biological filtration; beneficial for fish.",
+                        "Excessive plant growth; harmless.",
+                        "Ineffective biological filtration; highly toxic to fish.",
+                        "Too much dissolved oxygen; causes gas bubble disease."
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Ammonia is highly toxic to fish. A high reading in an established tank indicates that the beneficial bacteria responsible for the nitrogen cycle are not effectively converting fish waste and decaying matter. This can be due to an immature filter, overfeeding, overcrowding, or a dead fish, and it can quickly lead to gill damage, stress, and death."
+                },
+                {
+                    question: "Which type of filtration is primarily responsible for converting toxic ammonia and nitrite into less harmful nitrate in an aquarium?",
+                    options: [
+                        "Mechanical filtration",
+                        "Chemical filtration",
+                        "Biological filtration",
+                        "UV sterilization"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Biological filtration relies on beneficial bacteria (Nitrosomonas and Nitrobacter) that colonize filter media (sponges, ceramic rings, bio-balls) to perform the nitrification process, converting ammonia to nitrite and then nitrite to nitrate. This is the cornerstone of a healthy aquarium."
+                },
+                {
+                    question: "What is 'Malawi Bloat' and which group of cichlids is most susceptible to it?",
+                    options: [
+                        "A bacterial infection causing skin lesions; affects all cichlids.",
+                        "A parasitic disease causing gill damage; affects South American cichlids.",
+                        "A digestive disorder often linked to improper diet; primarily affects herbivorous African cichlids.",
+                        "A viral infection causing neurological symptoms; affects predatory cichlids."
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Malawi Bloat is a serious and often fatal digestive disorder primarily affecting herbivorous and omnivorous African cichlids from Lake Malawi and Tanganyika (like Mbuna and Tropheus). It is commonly triggered by feeding diets too high in animal protein or fat, which their specialized digestive systems cannot properly process, leading to internal bacterial overgrowth and organ damage."
+                },
+                {
+                    question: "When keeping a group of 'Haplochromis' cichlids (Haps), what is a common strategy to minimize aggression and promote natural behavior?",
+                    options: [
+                        "Keeping only a single male in a small tank.",
+                        "Maintaining an all-male tank with many different species.",
+                        "Housing them in a species-only tank with a 1:1 male-to-female ratio.",
+                        "Providing a large tank with ample open swimming space and a high female-to-male ratio."
+                    ],
+                    correctAnswerIndex: 3,
+                    explanation: "Haplochromis cichlids are generally open-water hunters and can be quite aggressive. A large tank provides ample swimming space and allows subdominant fish to escape. A high female-to-male ratio (e.g., 1 male to 3-5+ females) helps to diffuse the male's breeding aggression among multiple females, preventing any single female from being overly harassed."
+                },
+                {
+                    question: "Which of these cichlid genera is known for its distinctive 'forehead hump' (nuchal hump) that develops in mature males, often indicating dominance and sexual maturity?",
+                    options: [
+                        "Apistogramma",
+                        "Julidochromis",
+                        "Cyphotilapia (e.g., Frontosa)",
+                        "Pelvicachromis"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "The genus Cyphotilapia, which includes the popular Frontosa cichlid from Lake Tanganyika, is famous for the prominent nuchal hump that develops on the forehead of mature males. This fatty deposit is a secondary sexual characteristic, often indicating the male's age, dominance, and breeding readiness."
+                },
+                {
+                    question: "What is the primary purpose of 'blackwater' conditions (low pH, low hardness, stained water) for many South American cichlids like Discus and some Apistogrammas?",
+                    options: [
+                        "To inhibit algae growth",
+                        "To mimic their natural habitat and reduce stress",
+                        "To promote faster growth rates",
+                        "To enhance their predatory instincts"
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "Many South American cichlids originate from blackwater rivers and tributaries, where decaying leaves and wood release tannins, staining the water and lowering pH and hardness. Replicating these conditions in an aquarium reduces stress, enhances their natural coloration, and can stimulate breeding, as they are adapted to this specific environment."
+                },
+                {
+                    question: "When dealing with a cichlid exhibiting clamped fins, rapid breathing, and loss of appetite, what is the immediate first step an experienced aquarist should take?",
+                    options: [
+                        "Administer a broad-spectrum antibiotic.",
+                        "Perform a large water change and test water parameters.",
+                        "Increase tank temperature significantly.",
+                        "Add aquarium salt to the water."
+                    ],
+                    correctAnswerIndex: 1,
+                    explanation: "Clamped fins, rapid breathing, and loss of appetite are classic signs of stress and poor water quality. The immediate first step should always be to perform a large (e.g., 50%) water change and then thoroughly test all water parameters (ammonia, nitrite, nitrate, pH). Addressing water quality issues is paramount before considering any medication, as poor water is often the root cause."
+                },
+                {
+                    question: "Which of these cichlid species is known for its unique 'brushing' behavior, where individuals rub their flanks against each other, thought to be a form of social bonding?",
+                    options: [
+                        "Oscar (Astronotus ocellatus)",
+                        "Flowerhorn Cichlid (hybrid)",
+                        "Angelfish (Pterophyllum scalare)",
+                        "Convict Cichlid (Amatitlania nigrofasciata)"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Angelfish (Pterophyllum scalare) exhibit a fascinating behavior called 'brushing,' where they gently rub their bodies against each other. This is believed to be a form of social interaction that strengthens pair bonds and group cohesion, and can even be seen as a way to de-escalate minor conflicts."
+                },
+                {
+                    question: "The genus <span class='italic'>Apistogramma</span> primarily consists of what size category of cichlids, often popular in heavily planted or 'nano' community tanks?",
+                    options: [
+                        "Large cichlids (over 10 inches)",
+                        "Medium cichlids (5-10 inches)",
+                        "Dwarf cichlids (under 4 inches)",
+                        "Giant cichlids (over 15 inches)"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "Apistogramma species are classic dwarf cichlids, with most species remaining under 4 inches (10 cm). Their smaller size, intricate coloration, and interesting behaviors make them highly sought after for smaller aquariums, heavily planted tanks, and peaceful community setups."
+                },
+                {
+                    question: "What is the primary reason for providing ample hiding spots and visual barriers in a multi-cichlid tank, especially for aggressive species?",
+                    options: [
+                        "To encourage breeding",
+                        "To prevent fish from jumping out of the tank",
+                        "To reduce aggression and stress by allowing subdominant fish to escape",
+                        "To enhance filtration efficiency"
+                    ],
+                    correctAnswerIndex: 2,
+                    explanation: "In a cichlid tank, particularly with territorial or aggressive species, providing numerous hiding spots (caves, rockwork, dense planting) and visual barriers (tall decor, driftwood) is essential. This allows subdominant or harassed fish to retreat and break line of sight from aggressive tankmates, significantly reducing stress, injury, and overall aggression levels."
+                },
+                {
+                    question: "Which of the following is an example of an 'Old World' cichlid, meaning it originates from Africa or Asia?",
+                    options: [
+                        "Oscar (Astronotus ocellatus)",
+                        "Jack Dempsey (Rocio octofasciata)",
+                        "Discus (Symphysodon spp.)",
+                        "Frontosa (Cyphotilapia frontosa)"
+                    ],
+                    correctAnswerIndex: 3,
+                    explanation: "Old World cichlids refer to species originating from Africa or Asia. The Frontosa (Cyphotilapia frontosa) is a prime example, hailing from Lake Tanganyika in Africa. Oscars, Jack Dempseys, and Discus are all 'New World' cichlids, originating from South or Central America."
+                }
+            ];
+
+            // Function to show a specific section and hide others
+            function showSection(sectionToShowId) {
+                contentSections.forEach(s => s.classList.remove('active'));
+                document.getElementById(sectionToShowId).classList.add('active');
+            }
+
+            // Quiz initialization and display
+            function initializeQuiz() {
+                availableQuestionIndices = Array.from({ length: quizQuestions.length }, (_, i) => i); // Fill with all indices
+                correctCount = 0; // Reset scores
+                incorrectCount = 0; // Reset scores
+                currentQuestionIndex = -1; // Set to -1 so nextQuestion() picks the first one
+                quizActive = false; // Quiz is not active until a question is displayed
+
+                // No "Start Quiz" button state needed anymore
+                nextQuestionBtn.textContent = "Next Question"; // Default to Next Question
+                nextQuestionBtn.disabled = true; // Disabled until an answer is selected
+                
+                quizFeedback.style.display = 'none'; // Hide feedback
+                feedbackMessage.textContent = '';
+                correctAnswerInfo.textContent = '';
+                quizOptionsContainer.innerHTML = ''; // Clear previous options
+                questionText.textContent = ''; // Clear question text
+                quizScoreDisplay.style.display = 'none'; // Hide score display
+                if (scoreTimeout) { // Clear any pending timeout
+                    clearTimeout(scoreTimeout);
+                    scoreTimeout = null;
+                }
+            }
+
+            // Function to display the current score
+            function displayCurrentScore() {
+                const totalQuestionsAttempted = correctCount + incorrectCount;
+                let percentage = 0;
+                if (totalQuestionsAttempted > 0) {
+                    percentage = (correctCount / totalQuestionsAttempted) * 100;
+                }
+
+                quizScoreDisplay.innerHTML = `
+                    <p>Correct: ${correctCount}</p>
+                    <p>Incorrect: ${incorrectCount}</p>
+                    <p>Score: ${percentage.toFixed(0)}%</p>
+                `;
+                quizScoreDisplay.style.display = 'block'; // Show score
+            }
+
+
+            function displayQuestion() {
+                quizScoreDisplay.style.display = 'none'; // Hide score when a new question is displayed
+                if (scoreTimeout) { // Clear any pending timeout if a new question is requested before timer ends
+                    clearTimeout(scoreTimeout);
+                    scoreTimeout = null;
+                }
+
+
+                if (availableQuestionIndices.length === 0) {
+                    questionText.textContent = "You've completed all questions! Well done!";
+                    quizOptionsContainer.innerHTML = '';
+                    quizFeedback.style.display = 'none';
+                    nextQuestionBtn.textContent = "Restart Quiz";
+                    nextQuestionBtn.disabled = false; // Enable for restart
+                    quizActive = false; // Quiz is no longer active (completed)
+                    
+                    displayFinalScore(); // Display score immediately upon completion (now just a wrapper for displayCurrentScore)
+
+                    // No automatic exit here, score remains until user clicks Exit
+                    return;
+                }
+
+                // Pick a random question from available indices
+                const randomIndex = Math.floor(Math.random() * availableQuestionIndices.length);
+                currentQuestionIndex = availableQuestionIndices[randomIndex];
+                
+                // Remove the selected question from the available pool to prevent immediate repeats
+                availableQuestionIndices.splice(randomIndex, 1);
+
+                const questionData = quizQuestions[currentQuestionIndex];
+                questionText.innerHTML = questionData.question; // Use innerHTML for potential italics
+                quizOptionsContainer.innerHTML = ''; // Clear previous options
+                quizFeedback.style.display = 'none'; // Hide feedback from previous question
+                quizFeedback.className = 'quiz-feedback'; // Reset feedback classes
+
+                questionData.options.forEach((option, index) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.innerHTML = option; // Use innerHTML for potential italics in options
+                    optionDiv.dataset.index = index;
+                    optionDiv.classList.add('option-item'); // Add a class for easier selection
+                    optionDiv.addEventListener('click', handleAnswerClick);
+                    quizOptionsContainer.appendChild(optionDiv);
+                });
+
+                nextQuestionBtn.disabled = true; // Disable next button until answer is selected
+                nextQuestionBtn.textContent = "Next Question"; // Reset button text
+                quizActive = true; // Quiz is now active (question displayed)
+            }
+
+            function handleAnswerClick(event) {
+                // Only process answer if quiz is active and next button is disabled (meaning question is unanswered)
+                if (!quizActive || !nextQuestionBtn.disabled) {
+                    return;
+                }
+
+                const selectedOption = event.target;
+                const selectedIndex = parseInt(selectedOption.dataset.index);
+                const questionData = quizQuestions[currentQuestionIndex];
+
+                // Mark selected option and disable further clicks
+                Array.from(quizOptionsContainer.children).forEach(option => {
+                    option.classList.remove('selected'); // Remove any previously selected class
+                    option.removeEventListener('click', handleAnswerClick); // Disable further clicks
+                });
+                selectedOption.classList.add('selected');
+
+                // Update score counts and apply highlighting
+                if (selectedIndex === questionData.correctAnswerIndex) {
+                    correctCount++;
+                    selectedOption.classList.add('correct-highlight'); // Apply green highlight to selected correct answer
+                    feedbackMessage.textContent = "Correct! 🎉";
+                    quizFeedback.classList.remove('incorrect');
+                    quizFeedback.classList.add('correct');
+                } else {
+                    incorrectCount++;
+                    selectedOption.classList.add('incorrect-highlight'); // Apply red highlight to selected incorrect answer
+                    feedbackMessage.textContent = "Incorrect. 😕";
+                    quizFeedback.classList.remove('correct');
+                    quizFeedback.classList.add('incorrect');
+                    // Also highlight the correct answer in green
+                    quizOptionsContainer.children[questionData.correctAnswerIndex].classList.add('correct-highlight');
+                }
+                
+                quizFeedback.style.display = 'block'; // Show feedback
+                correctAnswerInfo.innerHTML = `<strong>Correct Answer:</strong> ${questionData.options[questionData.correctAnswerIndex]}<br><br>${questionData.explanation}`;
+                nextQuestionBtn.disabled = false; // Enable next question button
+                displayCurrentScore(); // Display score after each answer
+            }
+
+            // Function to display final score (retained for consistency, but now just calls displayCurrentScore)
+            function displayFinalScore() {
+                displayCurrentScore(); // The score is already updated and displayed by handleAnswerClick
+                // Optionally, you could add a "Quiz Completed!" message here if desired
+                // quizScoreDisplay.insertAdjacentHTML('afterbegin', '<p class="font-bold">Quiz Completed!</p>');
+            }
+
+            // Event Listeners for main navigation
+            navTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetTab = tab.dataset.tab;
+                    showSection(targetTab);
+                    mainNavTabs.style.display = 'flex'; // Ensure tabs are visible
+
+                    // If navigating to the quiz section, initialize it and display first question
+                    if (targetTab === 'quiz') {
+                        initializeQuiz(); // Reset quiz state
+                        displayQuestion(); // Immediately display the first question
+                    }
+                });
+            });
+
+            // Electric Blue Hap card click logic
+            if (electricBlueHapCard) {
+                electricBlueHapCard.addEventListener('click', () => {
+                    showSection('electric-blue-hap-detail');
+                    mainNavTabs.style.display = 'none';
+                });
+            }
+
+            // Angelfish card click logic
+            if (angelfishCard) {
+                angelfishCard.addEventListener('click', () => {
+                    showSection('angelfish-detail');
+                    mainNavTabs.style.display = 'none';
+                });
+            }
+
+            // Jack Dempsey card click logic
+            if (jackDempseyCard) {
+                jackDempseyCard.addEventListener('click', () => {
+                    showSection('jack-dempsey-detail');
+                    mainNavTabs.style.display = 'none';
+                });
+            }
+
+            // Back to Species button logic for Electric Blue Hap
+            if (backToSpeciesFromHapButton) {
+                backToSpeciesFromHapButton.addEventListener('click', () => {
+                    showSection('species');
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    document.querySelector('.nav-tab[data-tab="species"]').classList.add('active');
+                    mainNavTabs.style.display = 'flex';
+                });
+            }
+
+            // Back to Species button logic for Angelfish
+            if (backToSpeciesFromAngelfishButton) {
+                backToSpeciesFromAngelfishButton.addEventListener('click', () => {
+                    showSection('species');
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    document.querySelector('.nav-tab[data-tab="species"]').classList.add('active');
+                    mainNavTabs.style.display = 'flex';
+                });
+            }
+
+            // Back to Species button logic for Jack Dempsey
+            if (backToSpeciesFromJackDempseyButton) {
+                backToSpeciesFromJackDempseyButton.addEventListener('click', () => {
+                    showSection('species');
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    document.querySelector('.nav-tab[data-tab="species"]').classList.add('active');
+                    mainNavTabs.style.display = 'flex';
+                });
+            }
+
+            // Quiz button event listeners
+            nextQuestionBtn.addEventListener('click', () => {
+                if (nextQuestionBtn.textContent === "Restart Quiz") {
+                    initializeQuiz(); // Reset state
+                    displayQuestion(); // Start new quiz
+                } else {
+                    displayQuestion(); // Go to next question
+                }
+            });
+
+            exitQuizBtn.addEventListener('click', () => {
+                if (scoreTimeout) { // Clear any pending timeout
+                    clearTimeout(scoreTimeout);
+                    scoreTimeout = null;
+                }
+                showSection('species'); // Return to the species (home) page
+                navTabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('.nav-tab[data-tab="species"]').classList.add('active');
+                mainNavTabs.style.display = 'flex';
+                initializeQuiz(); // Reset quiz state when exiting
+            });
+
+            // Initial setup when the page loads
+            // If the user lands directly on the quiz tab (e.g., refreshes), initialize and display.
+            // This is less likely with the current default tab being 'species', but good practice.
+            if (quizSection.classList.contains('active')) {
+                initializeQuiz();
+                displayQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
